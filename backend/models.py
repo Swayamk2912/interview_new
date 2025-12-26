@@ -43,8 +43,8 @@ class Question(Base):
     
     # Relationships
     question_set = relationship("QuestionSet", back_populates="questions")
-    answer_key = relationship("AnswerKey", back_populates="question", uselist=False)
-    candidate_answers = relationship("CandidateAnswer", back_populates="question")
+    answer_key = relationship("AnswerKey", back_populates="question", uselist=False, cascade="all, delete-orphan")
+    candidate_answers = relationship("CandidateAnswer", back_populates="question", cascade="all, delete-orphan")
 
 class AnswerKey(Base):
     __tablename__ = "answer_keys"
@@ -67,6 +67,13 @@ class TestSession(Base):
     started_at = Column(DateTime, default=datetime.utcnow)
     submitted_at = Column(DateTime, nullable=True)
     is_completed = Column(Boolean, default=False)
+    
+    # Candidate Details (Pre-test form)
+    candidate_name = Column(String, nullable=True)
+    candidate_email = Column(String, nullable=True)
+    candidate_mobile = Column(String, nullable=True)
+    test_date = Column(String, nullable=True)  # Stored as string for flexibility
+    batch_time = Column(String, nullable=True)
     
     # Relationships
     candidate = relationship("User", back_populates="test_sessions")

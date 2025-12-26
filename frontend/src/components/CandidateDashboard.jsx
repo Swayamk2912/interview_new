@@ -9,7 +9,7 @@ const CandidateDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [view, setView] = useState('select'); // 'select', 'test', 'result'
+  const [view, setView] = useState('select'); // 'select', 'details-form', 'test', 'result'
   const [questionSets, setQuestionSets] = useState([]);
   const [selectedQuestionSet, setSelectedQuestionSet] = useState(null);
   const [session, setSession] = useState(null);
@@ -19,6 +19,15 @@ const CandidateDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
+  // Candidate details state
+  const [candidateDetails, setCandidateDetails] = useState({
+    name: '',
+    email: '',
+    mobile: '',
+    date: new Date().toISOString().split('T')[0], // Today's date
+    batchTime: ''
+  });
 
   useEffect(() => {
     if (view === 'select') {
@@ -35,14 +44,47 @@ const CandidateDashboard = () => {
     }
   };
 
-  const startTest = async (questionSetId) => {
+  const showDetailsForm = (questionSetId) => {
+    setSelectedQuestionSet(questionSetId);
+    setView('details-form');
+  };
+
+  const handleDetailsSubmit = async (e) => {
+    e.preventDefault();
+
+    // Validate all fields are filled
+    if (!candidateDetails.name || !candidateDetails.email || !candidateDetails.mobile ||
+      !candidateDetails.date || !candidateDetails.batchTime) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(candidateDetails.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    // Mobile validation (10 digits)
+    const mobileRegex = /^\d{10}$/;
+    if (!mobileRegex.test(candidateDetails.mobile)) {
+      setError('Please enter a valid 10-digit mobile number');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      // Start session
+      // Start session with candidate details
       const sessionResponse = await api.post('/api/candidate/session/start', {
-        question_set_id: questionSetId
+        question_set_id: selectedQuestionSet,
+        candidate_name: candidateDetails.name,
+        candidate_email: candidateDetails.email,
+        candidate_mobile: candidateDetails.mobile,
+        test_date: candidateDetails.date,
+        batch_time: candidateDetails.batchTime
       });
 
       const sessionData = sessionResponse.data;
@@ -156,9 +198,14 @@ const CandidateDashboard = () => {
                 </div>
               ) : (
                 questionSets.map((qs) => (
-                  <div key={qs.id} className="card test-card">
+                  <div key={qs.id} className={`card test-card ${qs.is_completed ? 'test-completed' : ''}`}>
                     <div className="test-card-header">
                       <h3 className="test-card-title">{qs.title}</h3>
+                      {qs.is_completed && (
+                        <div className="completed-badge">
+                          ✅ Test Already Given
+                        </div>
+                      )}
                       <div className="test-stats">
                         <div className="stat-item">
                           <span className="stat-icon">📝</span>
@@ -167,15 +214,115 @@ const CandidateDashboard = () => {
                       </div>
                     </div>
                     <button
-                      onClick={() => startTest(qs.id)}
+                      onClick={() => showDetailsForm(qs.id)}
                       className="btn btn-primary btn-block"
-                      disabled={loading}
+                      disabled={loading || qs.is_completed}
                     >
-                      {loading ? 'Starting...' : 'Start Test'}
+                      {qs.is_completed ? '🔒 Test Completed' : (loading ? 'Starting...' : 'Start Test')}
                     </button>
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Candidate Details Form */}
+        {view === 'details-form' && (
+          <div className="details-form-section">
+            <div className="card details-form-card">
+              <div className="card-header">
+                <h2 className="card-title">📋 Candidate Information</h2>
+                <p className="card-subtitle">Please fill in all details before starting the test</p>
+              </div>
+
+              <form onSubmit={handleDetailsSubmit}>
+                <div className="grid grid-cols-2">
+                  {/* Name */}
+                  <div className="form-group">
+                    <label className="form-label">Name *</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={candidateDetails.name}
+                      onChange={(e) => setCandidateDetails({ ...candidateDetails, name: e.target.value })}
+                      placeholder="Enter your full name"
+                      required
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div className="form-group">
+                    <label className="form-label">Email ID *</label>
+                    <input
+                      type="email"
+                      className="form-input"
+                      value={candidateDetails.email}
+                      onChange={(e) => setCandidateDetails({ ...candidateDetails, email: e.target.value })}
+                      placeholder="your.email@example.com"
+                      required
+                    />
+                  </div>
+
+                  {/* Mobile */}
+                  <div className="form-group">
+                    <label className="form-label">Mobile No. *</label>
+                    <input
+                      type="tel"
+                      className="form-input"
+                      value={candidateDetails.mobile}
+                      onChange={(e) => setCandidateDetails({ ...candidateDetails, mobile: e.target.value })}
+                      placeholder="10-digit mobile number"
+                      pattern="[0-9]{10}"
+                      maxLength="10"
+                      required
+                    />
+                  </div>
+
+                  {/* Date */}
+                  <div className="form-group">
+                    <label className="form-label">Date *</label>
+                    <input
+                      type="date"
+                      className="form-input"
+                      value={candidateDetails.date}
+                      onChange={(e) => setCandidateDetails({ ...candidateDetails, date: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  {/* Batch Time */}
+                  <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                    <label className="form-label">Batch Time *</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={candidateDetails.batchTime}
+                      onChange={(e) => setCandidateDetails({ ...candidateDetails, batchTime: e.target.value })}
+                      placeholder="e.g., Morning 9:00 AM - 12:00 PM"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    onClick={() => setView('select')}
+                    className="btn btn-outline"
+                    disabled={loading}
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={loading}
+                  >
+                    {loading ? 'Starting Test...' : 'Proceed to Test →'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
@@ -339,6 +486,27 @@ const CandidateDashboard = () => {
                   {result.passed ? '✓ Passed' : '✗ Failed'}
                 </div>
               </div>
+
+              {/* Congratulations/Encouragement Message */}
+              {result.passed ? (
+                <div className="congrats-message">
+                  <div className="congrats-icon">🎉</div>
+                  <h3 className="congrats-title">Congratulations! You Passed! 🎊</h3>
+                  <p className="congrats-text">
+                    Excellent work! You've successfully completed the test with a score of {result.score_percentage.toFixed(1)}%.
+                    Keep up the great performance!
+                  </p>
+                </div>
+              ) : (
+                <div className="encourage-message">
+                  <div className="encourage-icon">💪</div>
+                  <h3 className="encourage-title">Keep Trying!</h3>
+                  <p className="encourage-text">
+                    Don't give up! Review the answers below and you'll do better next time.
+                    You scored {result.score_percentage.toFixed(1)}% - you're getting there!
+                  </p>
+                </div>
+              )}
 
               <div className="score-display">
                 <div className="score-circle">

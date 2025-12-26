@@ -53,6 +53,11 @@ class SessionAnswersSubmit(BaseModel):
 # Test Session Schemas
 class SessionStart(BaseModel):
     question_set_id: int
+    candidate_name: str
+    candidate_email: str
+    candidate_mobile: str
+    test_date: str
+    batch_time: str
 
 class SessionResponse(BaseModel):
     id: int

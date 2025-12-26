@@ -40,18 +40,27 @@ def get_available_question_sets(
     current_candidate: User = Depends(get_current_candidate),
     db: Session = Depends(get_db)
 ):
-    """Get all available question sets"""
+    """Get all available question sets with completion status"""
     question_sets = db.query(QuestionSet).filter(QuestionSet.is_active == True).all()
     
     result = []
     for qs in question_sets:
         question_count = db.query(Question).filter(Question.question_set_id == qs.id).count()
+        
+        # Check if candidate has already completed this test
+        completed_session = db.query(TestSession).filter(
+            TestSession.candidate_id == current_candidate.id,
+            TestSession.question_set_id == qs.id,
+            TestSession.is_completed == True
+        ).first()
+        
         result.append({
             "id": qs.id,
             "title": qs.title,
             "uploaded_at": qs.uploaded_at,
             "is_active": qs.is_active,
-            "total_questions": question_count
+            "total_questions": question_count,
+            "is_completed": completed_session is not None
         })
     
     return result
@@ -75,6 +84,19 @@ def start_test_session(
             detail="Question set not found or inactive"
         )
     
+    # Check if candidate has already completed this test
+    completed_session = db.query(TestSession).filter(
+        TestSession.candidate_id == current_candidate.id,
+        TestSession.question_set_id == session_data.question_set_id,
+        TestSession.is_completed == True
+    ).first()
+    
+    if completed_session:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You have already completed this test. Each test can only be taken once."
+        )
+    
     # Check if user already has an incomplete session
     existing_session = db.query(TestSession).filter(
         TestSession.candidate_id == current_candidate.id,
@@ -85,11 +107,16 @@ def start_test_session(
     if existing_session:
         return existing_session
     
-    # Create new session
+    # Create new session with candidate details
     new_session = TestSession(
         candidate_id=current_candidate.id,
         question_set_id=session_data.question_set_id,
-        is_completed=False
+        is_completed=False,
+        candidate_name=session_data.candidate_name,
+        candidate_email=session_data.candidate_email,
+        candidate_mobile=session_data.candidate_mobile,
+        test_date=session_data.test_date,
+        batch_time=session_data.batch_time
     )
     
     db.add(new_session)
@@ -190,6 +217,8 @@ def submit_test(
         })
     
     # Grade the test using fuzzy matching
+    # IMPORTANT: Use actual questions count, not answer keys count
+    # This prevents issues when answer PDF has more answers than questions
     grading_result = GradingService.grade_test(
         candidate_answers_data,
         correct_answers_map,
@@ -197,6 +226,13 @@ def submit_test(
         threshold=0.75,
         passing_percentage=60.0
     )
+    
+    # Override total_questions to match actual question set size
+    # This fixes the issue where answer keys might have extras
+    actual_question_count = len(questions)
+    grading_result["total_questions"] = actual_question_count
+    grading_result["score_percentage"] = (grading_result["correct_answers"] / actual_question_count * 100) if actual_question_count > 0 else 0
+    grading_result["passed"] = grading_result["score_percentage"] >= 60.0
     
     # Update candidate answers with grading results
     # Create a mapping from question_number to question_id for efficiency

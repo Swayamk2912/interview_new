@@ -9,6 +9,7 @@ from schemas import (
 )
 from auth import decode_token
 from services.pdf_parser import PDFParser
+from services.multi_set_parser import MultiSetAnswerParser
 import os
 import shutil
 from typing import List
@@ -218,6 +219,136 @@ async def upload_answers(
         )
 
 
+@router.post("/upload/multi-set-answers")
+async def upload_multi_set_answers(
+    file: UploadFile = File(...),
+    set_a_id: int = Form(None),
+    set_b_id: int = Form(None),
+    set_c_id: int = Form(None),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Upload one answer PDF containing answers for Sets A, B, and C
+    Automatically parses and distributes to respective question sets
+    """
+    
+    # Validate file type
+    if not file.filename.endswith('.pdf'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only PDF files are allowed"
+        )
+    
+    # Validate at least one set ID provided
+    if not (set_a_id or set_b_id or set_c_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one question set ID must be provided"
+        )
+    
+    # Verify question sets exist
+    set_mapping = {}
+    if set_a_id:
+        set_a = db.query(QuestionSet).filter(QuestionSet.id == set_a_id).first()
+        if not set_a:
+            raise HTTPException(status_code=404, detail=f"Set A (ID {set_a_id}) not found")
+        set_mapping['SET A'] = set_a_id
+    
+    if set_b_id:
+        set_b = db.query(QuestionSet).filter(QuestionSet.id == set_b_id).first()
+        if not set_b:
+            raise HTTPException(status_code=404, detail=f"Set B (ID {set_b_id}) not found")
+        set_mapping['SET B'] = set_b_id
+    
+    if set_c_id:
+        set_c = db.query(QuestionSet).filter(QuestionSet.id == set_c_id).first()
+        if not set_c:
+            raise HTTPException(status_code=404, detail=f"Set C (ID {set_c_id}) not found")
+        set_mapping['SET C'] = set_c_id
+    
+    # Save uploaded file
+    upload_dir = "uploads"
+    os.makedirs(upload_dir, exist_ok=True)
+    file_path = os.path.join(upload_dir, f"multi_set_answers_{datetime.now().timestamp()}_{file.filename}")
+    
+    try:
+        # Read and save file
+        content = await file.read()
+        with open(file_path, "wb") as buffer:
+            buffer.write(content)
+        
+        # Parse multi-set answers
+        multi_set_data = MultiSetAnswerParser.parse_multi_set_answers(file_path)
+        
+        total_added = 0
+        results_by_set = {}
+        
+        # Process each set
+        for set_name, question_set_id in set_mapping.items():
+            if set_name not in multi_set_data:
+                continue
+            
+            answers_dict = multi_set_data[set_name]
+            questions = db.query(Question).filter(Question.question_set_id == question_set_id).all()
+            
+            added_count = 0
+            for question in questions:
+                if question.question_number in answers_dict:
+                    # Check if answer key exists
+                    existing_key = db.query(AnswerKey).filter(
+                        AnswerKey.question_id == question.id
+                    ).first()
+                    
+                    answer_text = answers_dict[question.question_number]
+                    
+                    if existing_key:
+                        # Update existing
+                        existing_key.correct_answer = answer_text
+                        existing_key.pdf_filename = file.filename
+                    else:
+                        # Create new
+                        answer_key = AnswerKey(
+                            question_id=question.id,
+                            correct_answer=answer_text,
+                            pdf_filename=file.filename
+                        )
+                        db.add(answer_key)
+                    
+                    added_count += 1
+            
+            results_by_set[set_name] = added_count
+            total_added += added_count
+        
+        db.commit()
+        
+        return {
+            "message": f"Successfully uploaded answers for {len(set_mapping)} sets",
+            "total_answers_added": total_added,
+            "details": results_by_set
+        }
+    
+    except ValueError as e:
+        # Parser error
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"PDF parsing error: {str(e)}"
+        )
+    except Exception as e:
+        # Clean up on error
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        import traceback
+        print(f"Error processing multi-set PDF: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error processing PDF: {str(e)}"
+        )
+
+
 @router.get("/question-sets", response_model=List[QuestionSetResponse])
 def get_question_sets(
     current_admin: User = Depends(get_current_admin),
@@ -319,6 +450,11 @@ def get_all_results(
         if result:
             results.append({
                 "candidate_username": candidate.username,
+                "candidate_name": session.candidate_name or "N/A",
+                "candidate_email": session.candidate_email or "N/A",
+                "candidate_mobile": session.candidate_mobile or "N/A",
+                "test_date": session.test_date or "N/A",
+                "batch_time": session.batch_time or "N/A",
                 "session_id": session.id,
                 "submitted_at": session.submitted_at,
                 "score_percentage": result.score_percentage,
@@ -345,6 +481,11 @@ def get_active_sessions(
         result.append({
             "session_id": session.id,
             "candidate_username": candidate.username,
+            "candidate_name": session.candidate_name or "N/A",
+            "candidate_email": session.candidate_email or "N/A",
+            "candidate_mobile": session.candidate_mobile or "N/A",
+            "test_date": session.test_date or "N/A",
+            "batch_time": session.batch_time or "N/A",
             "question_set_title": question_set.title,
             "started_at": session.started_at,
             "is_completed": session.is_completed,

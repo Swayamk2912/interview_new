@@ -154,12 +154,6 @@ const Login = () => {
               </p>
             </div>
           )}
-
-          {mode === 'admin' && (
-            <div className="admin-info">
-              <small>Default credentials: admin / admin123</small>
-            </div>
-          )}
         </div>
       </div>
     </div>

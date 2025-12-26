@@ -159,9 +159,31 @@ class PDFParser:
         print(text[:1000])
         print("=" * 80)
         
-        # Try table format first (SET A, SET B, SET C columns)
-        # Pattern: Q1 on one line, followed by answer lines
         lines = text.split('\n')
+        
+        # STRATEGY 1: Try table format with Q# and answer on SAME line
+        # Format: "Q1    ODQZM" or "Q1  \t  ODQZM" (separated by tabs/spaces)
+        for line in lines:
+            stripped = line.strip()
+            if not stripped or 'Question' in stripped or 'SET' in stripped:
+                continue  # Skip headers and empty lines
+            
+            # Match: Q## followed by whitespace/tab and then answer text
+            match = re.match(r'^[Qq](\d+)[\s\t]+(.+)', stripped)
+            if match:
+                question_num = int(match.group(1))
+                answer_text = match.group(2).strip()
+                if answer_text:  # Only add if answer is not empty
+                    answers[question_num] = answer_text
+                    print(f"Found Q{question_num}: {answer_text}")
+        
+        if answers:
+            print(f"Table format found {len(answers)} answers")
+            print("=" * 80)
+            return answers
+        
+        # STRATEGY 2: Try table format with Q1 on one line, answer on next (old format)
+        # Pattern: Q1 on one line, followed by answer lines
         
         i = 0
         while i < len(lines):

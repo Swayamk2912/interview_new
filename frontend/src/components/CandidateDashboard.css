@@ -42,6 +42,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -61,9 +62,12 @@
 }
 
 @keyframes glow {
-  0%, 100% {
+
+  0%,
+  100% {
     filter: drop-shadow(0 0 5px rgba(129, 140, 248, 0.5));
   }
+
   50% {
     filter: drop-shadow(0 0 20px rgba(129, 140, 248, 0.8));
   }
@@ -112,6 +116,32 @@
   border-color: var(--primary);
 }
 
+/* Completed Test Styles */
+.test-card.test-completed {
+  opacity: 0.7;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.4), rgba(30, 41, 59, 0.4));
+  border-color: rgba(99, 102, 241, 0.1);
+}
+
+.test-card.test-completed:hover {
+  transform: none;
+  box-shadow: var(--shadow-md);
+}
+
+.completed-badge {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: rgba(16, 185, 129, 0.2);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-md);
+  color: var(--accent-light);
+  font-weight: 700;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  animation: fadeIn 0.5s ease-out;
+}
+
+
 .test-card-header {
   margin-bottom: 2rem;
 }
@@ -148,6 +178,30 @@
   font-size: 1.5rem;
   filter: drop-shadow(0 0 5px rgba(99, 102, 241, 0.5));
 }
+
+/* Details Form Section */
+.details-form-section {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.details-form-card {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.form-actions .btn {
+  min-width: 150px;
+}
+
 
 .btn-block {
   width: 100%;
@@ -297,9 +351,12 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.05);
   }
@@ -394,6 +451,129 @@
   color: #fca5a5;
   border: 2px solid var(--error);
 }
+
+/* Congratulations Message */
+.congrats-message {
+  text-align: center;
+  padding: 2rem;
+  margin: 1.5rem 0;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(52, 211, 153, 0.1));
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-lg);
+  animation: celebr ate 0.6s ease-out;
+}
+
+@keyframes celebrate {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.congrats-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.congrats-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.congrats-text {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Encouragement Message */
+.encourage-message {
+  text-align: center;
+  padding: 2rem;
+  margin: 1.5rem 0;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-lg);
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.encourage-icon {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+  animation: pump 1.5s ease-in-out infinite;
+}
+
+@keyframes pump {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.encourage-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(135deg, var(--primary-light), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.encourage-text {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
 
 .score-display {
   display: flex;

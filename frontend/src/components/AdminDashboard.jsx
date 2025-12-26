@@ -403,7 +403,12 @@ const AdminDashboard = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Candidate</th>
+                        <th>Username</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Mobile</th>
+                        <th>Date</th>
+                        <th>Batch</th>
                         <th>Score</th>
                         <th>Correct</th>
                         <th>Total</th>
@@ -415,6 +420,11 @@ const AdminDashboard = () => {
                       {results.map((result, idx) => (
                         <tr key={idx}>
                           <td><strong>{result.candidate_username}</strong></td>
+                          <td>{result.candidate_name}</td>
+                          <td>{result.candidate_email}</td>
+                          <td>{result.candidate_mobile}</td>
+                          <td>{result.test_date}</td>
+                          <td>{result.batch_time}</td>
                           <td>{result.score_percentage.toFixed(1)}%</td>
                           <td>{result.correct_answers}</td>
                           <td>{result.total_questions}</td>
@@ -449,7 +459,12 @@ const AdminDashboard = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Candidate</th>
+                        <th>Username</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Mobile</th>
+                        <th>Date</th>
+                        <th>Batch</th>
                         <th>Question Set</th>
                         <th>Started</th>
                         <th>Status</th>
@@ -460,6 +475,11 @@ const AdminDashboard = () => {
                       {sessions.map((session, idx) => (
                         <tr key={idx}>
                           <td><strong>{session.candidate_username}</strong></td>
+                          <td>{session.candidate_name}</td>
+                          <td>{session.candidate_email}</td>
+                          <td>{session.candidate_mobile}</td>
+                          <td>{session.test_date}</td>
+                          <td>{session.batch_time}</td>
                           <td>{session.question_set_title}</td>
                           <td>{new Date(session.started_at).toLocaleString()}</td>
                           <td>
