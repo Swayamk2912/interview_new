@@ -480,13 +480,13 @@ def get_active_sessions(
         
         result.append({
             "session_id": session.id,
-            "candidate_username": candidate.username,
+            "candidate_username": candidate.username if candidate else "Unknown",
             "candidate_name": session.candidate_name or "N/A",
             "candidate_email": session.candidate_email or "N/A",
             "candidate_mobile": session.candidate_mobile or "N/A",
             "test_date": session.test_date or "N/A",
             "batch_time": session.batch_time or "N/A",
-            "question_set_title": question_set.title,
+            "question_set_title": question_set.title if question_set else "[Deleted Question Set]",
             "started_at": session.started_at,
             "is_completed": session.is_completed,
             "submitted_at": session.submitted_at

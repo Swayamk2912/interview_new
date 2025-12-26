@@ -200,12 +200,10 @@ class PDFParser:
                     next_line = lines[i + 1].strip()
                     print(f"  Next line: '{next_line}'")
                     
-                    # Check if next line starts with A., B., C., or D.
-                    option_match = re.match(r'^([A-D])\.?\s*(.+)?', next_line)
-                    if option_match:
-                        answer_letter = option_match.group(1)
-                        answers[question_num] = answer_letter
-                        print(f"  -> Answer: {answer_letter}")
+                    # Accept ANY non-empty answer (not just MCQ options A-D)
+                    if next_line and not re.match(r'^Q\d+$', next_line):
+                        answers[question_num] = next_line
+                        print(f"  -> Answer: {next_line}")
             
             i += 1
         
