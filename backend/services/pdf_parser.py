@@ -153,11 +153,7 @@ class PDFParser:
         text = PDFParser.extract_text_from_pdf(pdf_path)
         answers = {}
         
-        # DEBUG: Print first 1000 characters of extracted text
-        print("=" * 80)
-        print("EXTRACTED TEXT FROM ANSWER PDF:")
-        print(text[:1000])
-        print("=" * 80)
+
         
         lines = text.split('\n')
         
@@ -173,13 +169,18 @@ class PDFParser:
             if match:
                 question_num = int(match.group(1))
                 answer_text = match.group(2).strip()
+                
+                # Check if answer starts with MCQ option (A., B., C., D.)
+                # Extract just the letter for matching
+                option_match = re.match(r'^([A-D])\.?\s*', answer_text)
+                if option_match:
+                    # Extract just the letter (A, B, C, or D)
+                    answer_text = option_match.group(1)
+                
                 if answer_text:  # Only add if answer is not empty
                     answers[question_num] = answer_text
-                    print(f"Found Q{question_num}: {answer_text}")
         
         if answers:
-            print(f"Table format found {len(answers)} answers")
-            print("=" * 80)
             return answers
         
         # STRATEGY 2: Try table format with Q1 on one line, answer on next (old format)
@@ -193,24 +194,24 @@ class PDFParser:
             q_match = re.match(r'^Q(\d+)$', line)
             if q_match:
                 question_num = int(q_match.group(1))
-                print(f"Found Q{question_num}")
                 
-                # Look at the next line for SET A answer
+                # Look at the next line for answer
                 if i + 1 < len(lines):
                     next_line = lines[i + 1].strip()
-                    print(f"  Next line: '{next_line}'")
                     
                     # Accept ANY non-empty answer (not just MCQ options A-D)
                     if next_line and not re.match(r'^Q\d+$', next_line):
+                        # Check if answer starts with option letter (A., B., C., D.)
+                        option_match = re.match(r'^([A-D])\.?\s*', next_line)
+                        if option_match:
+                            # Extract just the letter
+                            next_line = option_match.group(1)
+                        
                         answers[question_num] = next_line
-                        print(f"  -> Answer: {next_line}")
             
             i += 1
         
-        # DEBUG: Print final answers
-        print(f"Total answers found: {len(answers)}")
-        print(f"Answers: {answers}")
-        print("=" * 80)
+
         
         # If table format found answers, return them
         if answers:
