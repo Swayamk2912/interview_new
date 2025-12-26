@@ -260,6 +260,49 @@ def get_questions_with_answers(
     
     return sorted(result, key=lambda x: x["question_number"])
 
+@router.delete("/question-sets/{question_set_id}")
+def delete_question_set(
+    question_set_id: int,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Delete a question set and all associated data"""
+    # Check if question set exists
+    question_set = db.query(QuestionSet).filter(QuestionSet.id == question_set_id).first()
+    if not question_set:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Question set not found"
+        )
+    
+    # Check if there are any active test sessions using this question set
+    active_sessions = db.query(TestSession).filter(
+        TestSession.question_set_id == question_set_id,
+        TestSession.is_completed == False
+    ).count()
+    
+    if active_sessions > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete question set with {active_sessions} active test session(s)"
+        )
+    
+    try:
+        # Delete the question set (cascade will handle questions and answer keys)
+        db.delete(question_set)
+        db.commit()
+        
+        return {
+            "message": f"Question set '{question_set.title}' deleted successfully",
+            "deleted_id": question_set_id
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error deleting question set: {str(e)}"
+        )
+
 @router.get("/results", response_model=List[CandidateResultSummary])
 def get_all_results(
     current_admin: User = Depends(get_current_admin),

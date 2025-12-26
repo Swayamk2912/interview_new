@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
+import ThemeToggle from './ThemeToggle';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -11,13 +12,13 @@ const AdminDashboard = () => {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
-  
+
   // Upload states
   const [questionFile, setQuestionFile] = useState(null);
   const [answerFile, setAnswerFile] = useState(null);
   const [questionSetTitle, setQuestionSetTitle] = useState('');
   const [selectedQuestionSet, setSelectedQuestionSet] = useState(null);
-  
+
   // Preview states
   const [previewQuestions, setPreviewQuestions] = useState([]);
 
@@ -79,7 +80,7 @@ const AdminDashboard = () => {
       const response = await api.post('/api/admin/upload/questions', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      
+
       showMessage('success', response.data.message);
       setQuestionFile(null);
       setQuestionSetTitle('');
@@ -108,7 +109,7 @@ const AdminDashboard = () => {
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
-      
+
       showMessage('success', response.data.message);
       setAnswerFile(null);
     } catch (error) {
@@ -127,8 +128,25 @@ const AdminDashboard = () => {
     }
   };
 
+  const deleteQuestionSet = async (questionSetId, title) => {
+    if (!window.confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await api.delete(`/api/admin/question-sets/${questionSetId}`);
+      showMessage('success', response.data.message);
+      fetchQuestionSets();
+    } catch (error) {
+      showMessage('error', error.response?.data?.detail || 'Failed to delete question set');
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="admin-container">
+      <ThemeToggle />
       {/* Header */}
       <header className="admin-header">
         <div className="header-content container">
@@ -309,12 +327,21 @@ const AdminDashboard = () => {
                             </span>
                           </td>
                           <td>
-                            <button
-                              onClick={() => viewQuestions(qs.id)}
-                              className="btn btn-sm btn-outline"
-                            >
-                              View
-                            </button>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => viewQuestions(qs.id)}
+                                className="btn btn-sm btn-outline"
+                              >
+                                👁️ View
+                              </button>
+                              <button
+                                onClick={() => deleteQuestionSet(qs.id, qs.title)}
+                                className="btn btn-sm btn-error"
+                                disabled={loading}
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -441,7 +468,7 @@ const AdminDashboard = () => {
                             </span>
                           </td>
                           <td>
-                            {session.submitted_at 
+                            {session.submitted_at
                               ? new Date(session.submitted_at).toLocaleString()
                               : '-'
                             }

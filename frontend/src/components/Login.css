@@ -28,8 +28,13 @@
 }
 
 @keyframes moveGrid {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(50px, 50px); }
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(50px, 50px);
+  }
 }
 
 .hero-content {
@@ -123,9 +128,19 @@
   gap: 0.5rem;
 }
 
+[data-theme="light"] .role-btn {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
 .role-btn:hover {
   border-color: var(--primary);
   background: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .role-btn:hover {
+  background: rgba(99, 102, 241, 0.05);
 }
 
 .role-btn.active {
@@ -133,6 +148,11 @@
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(79, 70, 229, 0.2));
   color: var(--primary-light);
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+[data-theme="light"] .role-btn.active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(79, 70, 229, 0.15));
+  color: var(--primary-dark);
 }
 
 .role-icon {
@@ -158,6 +178,10 @@
   cursor: pointer;
   margin-left: 0.5rem;
   transition: color var(--transition-base);
+}
+
+[data-theme="light"] .link-btn {
+  color: var(--primary-dark);
 }
 
 .link-btn:hover {

@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
+import ThemeToggle from './ThemeToggle';
 import './CandidateDashboard.css';
 
 const CandidateDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  
+
   const [view, setView] = useState('select'); // 'select', 'test', 'result'
   const [questionSets, setQuestionSets] = useState([]);
   const [selectedQuestionSet, setSelectedQuestionSet] = useState(null);
@@ -37,33 +38,33 @@ const CandidateDashboard = () => {
   const startTest = async (questionSetId) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // Start session
       const sessionResponse = await api.post('/api/candidate/session/start', {
         question_set_id: questionSetId
       });
-      
+
       const sessionData = sessionResponse.data;
       setSession(sessionData);
-      
+
       // Get questions
       const questionsResponse = await api.get(`/api/candidate/test/${sessionData.id}`);
       setQuestions(questionsResponse.data);
-      
+
       // Initialize answers
       const initialAnswers = {};
       questionsResponse.data.forEach(q => {
         initialAnswers[q.id] = '';
       });
       setAnswers(initialAnswers);
-      
+
       setView('test');
       setCurrentQuestionIndex(0);
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to start test');
     }
-    
+
     setLoading(false);
   };
 
@@ -112,6 +113,7 @@ const CandidateDashboard = () => {
 
   return (
     <div className="candidate-container">
+      <ThemeToggle />
       {/* Header */}
       <header className="candidate-header">
         <div className="header-content container">
@@ -188,8 +190,8 @@ const CandidateDashboard = () => {
                 <span>{Math.round(progress)}% Complete</span>
               </div>
               <div className="progress-bar">
-                <div 
-                  className="progress-fill" 
+                <div
+                  className="progress-fill"
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
@@ -205,7 +207,7 @@ const CandidateDashboard = () => {
                     const questionText = currentQuestion.question_text;
                     const lines = questionText.split('\n');
                     const mainQuestion = [];
-                    
+
                     for (let line of lines) {
                       // Stop at first option line (A., B., C., D.)
                       if (/^[A-D]\./.test(line.trim())) {
@@ -213,7 +215,7 @@ const CandidateDashboard = () => {
                       }
                       mainQuestion.push(line);
                     }
-                    
+
                     return mainQuestion.join(' ').trim();
                   })()}
                 </h2>
@@ -225,7 +227,7 @@ const CandidateDashboard = () => {
                   const questionText = currentQuestion.question_text;
                   const lines = questionText.split('\n');
                   const options = [];
-                  
+
                   for (let line of lines) {
                     const trimmed = line.trim();
                     // Match lines starting with A., B., C., D.
@@ -237,7 +239,7 @@ const CandidateDashboard = () => {
                       });
                     }
                   }
-                  
+
                   // If we found options, show radio buttons
                   if (options.length > 0) {
                     return (
@@ -291,7 +293,7 @@ const CandidateDashboard = () => {
                 >
                   ← Previous
                 </button>
-                
+
                 <div className="question-dots">
                   {questions.map((q, idx) => (
                     <button
@@ -342,10 +344,10 @@ const CandidateDashboard = () => {
                 <div className="score-circle">
                   <svg viewBox="0 0 100 100">
                     <circle className="score-circle-bg" cx="50" cy="50" r="45" />
-                    <circle 
-                      className="score-circle-fill" 
-                      cx="50" 
-                      cy="50" 
+                    <circle
+                      className="score-circle-fill"
+                      cx="50"
+                      cy="50"
                       r="45"
                       style={{
                         strokeDasharray: `${result.score_percentage * 2.827}, 282.7`

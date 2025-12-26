@@ -1,41 +1,17 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
 from database import init_db, get_db
 from models import User, UserRole
 from auth import get_password_hash
 from routes import auth_routes, admin_routes, candidate_routes
 import os
 
-# Initialize FastAPI app
-app = FastAPI(
-    title="Interview System API",
-    description="Offline interview management system with PDF processing and auto-grading",
-    version="1.0.0"
-)
-
-# Configure CORS for React frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],  # React dev servers
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Include routers
-app.include_router(auth_routes.router)
-app.include_router(admin_routes.router)
-app.include_router(candidate_routes.router)
-
-# Serve uploaded files
-os.makedirs("uploads", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-
-@app.on_event("startup")
-def startup_event():
-    """Initialize database and create default admin user"""
-    # Initialize database tables
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup and shutdown events"""
+    # Startup
     init_db()
     
     # Create default admin user if doesn't exist
@@ -57,6 +33,35 @@ def startup_event():
             print("✅ Admin user already exists")
     finally:
         db.close()
+    
+    yield
+    # Shutdown (cleanup can go here if needed)
+
+# Initialize FastAPI app
+app = FastAPI(
+    title="Interview System API",
+    description="Offline interview management system with PDF processing and auto-grading",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# Configure CORS for React frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],  # React dev servers
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
+app.include_router(auth_routes.router)
+app.include_router(admin_routes.router)
+app.include_router(candidate_routes.router)
+
+# Serve uploaded files
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")
 def read_root():

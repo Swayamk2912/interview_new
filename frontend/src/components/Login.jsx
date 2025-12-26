@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import ThemeToggle from './ThemeToggle';
 import './Login.css';
 
 const Login = () => {
@@ -47,6 +48,7 @@ const Login = () => {
 
   return (
     <div className="login-container">
+      <ThemeToggle />
       <div className="login-hero">
         <div className="hero-content">
           <h1 className="hero-title">
@@ -55,20 +57,6 @@ const Login = () => {
           <p className="hero-subtitle">
             Advanced Offline Assessment Platform
           </p>
-          <div className="hero-features">
-            <div className="feature-item">
-              <span className="feature-icon">📄</span>
-              <span>PDF Processing</span>
-            </div>
-            <div className="feature-item">
-              <span className="feature-icon">🤖</span>
-              <span>Auto Grading</span>
-            </div>
-            <div className="feature-item">
-              <span className="feature-icon">📊</span>
-              <span>Real-time Results</span>
-            </div>
-          </div>
         </div>
       </div>
 

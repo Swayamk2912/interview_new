@@ -199,13 +199,17 @@ def submit_test(
     )
     
     # Update candidate answers with grading results
+    # Create a mapping from question_number to question_id for efficiency
+    question_num_to_id = {q.question_number: q.id for q in questions}
+    
     for graded in grading_result["graded_answers"]:
+        question_id = question_num_to_id.get(graded["question_number"])
+        if not question_id:
+            continue
+            
         answer = db.query(CandidateAnswer).filter(
             CandidateAnswer.session_id == session.id,
-            CandidateAnswer.question_id == db.query(Question).filter(
-                Question.question_set_id == session.question_set_id,
-                Question.question_number == graded["question_number"]
-            ).first().id
+            CandidateAnswer.question_id == question_id
         ).first()
         
         if answer:
